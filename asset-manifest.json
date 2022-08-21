@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/renju-site/static/css/main.d32fef4f.css",
+    "main.js": "/renju-site/static/js/main.b1cc88f9.js",
+    "index.html": "/renju-site/index.html",
+    "main.d32fef4f.css.map": "/renju-site/static/css/main.d32fef4f.css.map",
+    "main.b1cc88f9.js.map": "/renju-site/static/js/main.b1cc88f9.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.d32fef4f.css",
+    "static/js/main.b1cc88f9.js"
+  ]
+}
