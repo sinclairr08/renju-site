@@ -38,7 +38,9 @@ const Board = () => {
   };
 
   const isForbidden = (x: number, y: number): boolean => {
-    const lengths: number[] = [];
+    let Nrow3 = -1;
+    let Nrow4 = -1;
+    let Nrow6 = 0;
     const startPlace = [x, y];
 
     for (let d = 0; d < DIRS.length; d++) {
@@ -115,27 +117,25 @@ const Board = () => {
         isBlocked = true;
       }
 
-      if (rowBlankCnt === 3 && !isBlocked) {
+      if (rowCnt === 5) {
+        return false;
+      } else if (rowBlankCnt === 3 && !isBlocked) {
         if (rowCnt !== 1 || rowLeftCnt * rowRightCnt === 0) {
-          if (lengths.includes(3)) {
-            return true;
-          } else {
-            lengths.push(3);
-          }
+          Nrow3 += 1;
         }
       } else if (rowBlankCnt === 4) {
-        if (lengths.includes(4)) {
-          return true;
-        } else {
-          lengths.push(4);
-        }
+        Nrow4 += 1;
       } else if (rowBlankCnt >= 6) {
         if (rowBlankCnt === rowCnt) {
-          return true;
+          Nrow6 += 1;
         } else if (rowBlankCnt === 7 && rowCnt === 1) {
-          return true;
+          Nrow4 += 2;
         }
       }
+    }
+
+    if (Nrow3 > 0 || Nrow4 > 0 || Nrow6 > 0) {
+      return true;
     }
 
     return false;
