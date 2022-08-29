@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import Board from "./board";
+import Board from "./board/index";
 import "./index.css";
 
 const root = ReactDOM.createRoot(
