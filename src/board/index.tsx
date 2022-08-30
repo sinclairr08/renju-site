@@ -6,7 +6,7 @@ const arr = [...Array(15).keys()];
 
 const Board = () => {
   const [positionMessage, setPositionMessage] = useState("");
-  const { board, status, isEnd, putStone } = useBoard();
+  const { board, status, isEnd, clearBoard, putStone } = useBoard();
   const boardRef = useRef<any>(null);
 
   const clickBoard = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -56,8 +56,8 @@ const Board = () => {
       <span className="mt-4 text-xl">{positionMessage}</span>
       <span className="mt-4 text-xl">{status}</span>
       <span className="mt-4 text-xl">{isEnd ? "Game End" : ""}</span>
-      <button className="mt-4" onClick={() => window.location.reload()}>
-        Reload
+      <button className="mt-4" onClick={clearBoard}>
+        Clear
       </button>
     </div>
   );

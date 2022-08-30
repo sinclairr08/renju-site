@@ -12,6 +12,7 @@ export interface useBoardReturns {
   board: stone[][];
   isEnd: boolean;
   status: string;
+  clearBoard: () => void;
   putStone: (p: place) => void;
   putStones: (p: place[]) => void;
 }
@@ -22,10 +23,10 @@ interface countRowProps {
   direction: place;
 }
 
+const EMPTY_STONE: stone = { counter: 0, color: "blank" };
+
 const makeEmptyBoard = (): stone[][] => {
-  return Array.from({ length: 15 }, () =>
-    Array(15).fill({ counter: 0, color: "blank" })
-  );
+  return Array.from({ length: 15 }, () => Array(15).fill(EMPTY_STONE));
 };
 
 const useBoard = (): useBoardReturns => {
@@ -40,7 +41,8 @@ const useBoard = (): useBoardReturns => {
 
     /** 2. Put a stone */
     const curTurnColor: stoneColor = counter % 2 === 0 ? "black" : "white";
-    setStone(p, curTurnColor);
+    setBoard(p, { color: curTurnColor, counter: counter + 1 });
+    setCounter((prev) => prev + 1);
 
     /** 3. Set forbidden */
     if (curTurnColor === "white") {
@@ -70,12 +72,8 @@ const useBoard = (): useBoardReturns => {
     return board[p.y][p.x].color;
   };
 
-  const setStone = (p: place, color: stoneColor) => {
-    setCounter((prev) => prev + 1);
-    board[p.y][p.x] = {
-      counter: counter + 1,
-      color,
-    };
+  const setBoard = (p: place, curStone: stone) => {
+    board[p.y][p.x] = curStone;
   };
 
   const isForbidden = (startPlace: place): boolean => {
@@ -236,8 +234,9 @@ const useBoard = (): useBoardReturns => {
   const setForbidden = () => {
     board.forEach((stoneRow, y) => {
       stoneRow.forEach((stone, x) => {
-        if (stone.color === "blank" && isForbidden({ x, y })) {
-          board[y][x] = { counter: -1, color: "forbidden" };
+        const curPlace = { x, y };
+        if (stone.color === "blank" && isForbidden(curPlace)) {
+          setBoard(curPlace, { counter: -1, color: "forbidden" });
         }
       });
     });
@@ -246,17 +245,33 @@ const useBoard = (): useBoardReturns => {
   const deleteForbidden = () => {
     board.forEach((boardRow, y) => {
       boardRow.forEach((stone, x) => {
+        const curPlace = { x, y };
         if (stone.color === "forbidden") {
-          board[y][x] = { counter: 0, color: "blank" };
+          setBoard(curPlace, EMPTY_STONE);
         }
       });
     });
+  };
+
+  const clearBoard = () => {
+    board.forEach((stoneRow, y) => {
+      stoneRow.forEach((stone, x) => {
+        const curPlace = { x, y };
+        if (stone.color !== "blank") {
+          setBoard(curPlace, EMPTY_STONE);
+        }
+      });
+    });
+    setCounter(0);
+    setIsEnd(false);
+    setStatus("");
   };
 
   return {
     board,
     status,
     isEnd,
+    clearBoard,
     putStone,
     putStones,
   };
