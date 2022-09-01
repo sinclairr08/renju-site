@@ -6,7 +6,8 @@ const arr = [...Array(15).keys()];
 
 const Board = () => {
   const [positionMessage, setPositionMessage] = useState("");
-  const { board, status, isEnd, clearBoard, putStone } = useBoard();
+  const { stones, winner, winReason, clearBoard, putStone, saveHistory } =
+    useBoard();
   const boardRef = useRef<any>(null);
 
   const clickBoard = (e: React.MouseEvent<HTMLDivElement>) => {
@@ -43,8 +44,8 @@ const Board = () => {
         />
 
         {preLine()}
-        {board.map((boardRow, i) =>
-          boardRow.map(
+        {stones.map((row, i) =>
+          row.map(
             (stone, j) =>
               stone.counter !== 0 &&
               stoneComponent({ location: { x: j, y: i }, ...stone })
@@ -53,12 +54,26 @@ const Board = () => {
         {arr.map((l) => hrLine(l))}
         {arr.map((l) => vrLine(l))}
       </div>
-      <span className="mt-4 text-xl">{positionMessage}</span>
-      <span className="mt-4 text-xl">{status}</span>
-      <span className="mt-4 text-xl">{isEnd ? "Game End" : ""}</span>
-      <button className="mt-4" onClick={clearBoard}>
-        Clear
-      </button>
+
+      <span className="mt-4">
+        {winner
+          ? `${winner} win! ${winReason}`
+          : `Position: ${positionMessage}`}
+      </span>
+      <div className="flex flex-col w-1/2">
+        <button
+          className="bg-neutral-800 text-white rounded-md p-2 mt-4"
+          onClick={clearBoard}
+        >
+          Clear
+        </button>
+        <button
+          className="bg-neutral-800 text-white rounded-md p-2 mt-4"
+          onClick={saveHistory}
+        >
+          Save (console)
+        </button>
+      </div>
     </div>
   );
 };

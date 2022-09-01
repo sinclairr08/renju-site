@@ -7,7 +7,7 @@ This is the web version of [renju-player](https://github.com/Sinclairr08/renju-p
 ## TODO
 
 1. ~~Move python code to react (2022-08-21)~~
-2. Code modularization
+2. ~~Code modularization~~
 3. Test code and interface
 4. Algorithm validation with test code
 5. Undo, Redo functions
