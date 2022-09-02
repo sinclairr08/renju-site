@@ -17,10 +17,11 @@ interface boardState {
   winReason: "Black took a forbidden" | "5 in a row" | "";
 }
 
-export interface useBoardReturns extends boardState {
+export interface useBoardReturns {
+  board: boardState;
   clearBoard: () => void;
-  putStone: (p: place) => void;
-  putStones: (p: place[]) => void;
+  putStone: (p: place) => Promise<void>;
+  putStones: (p: place[]) => Promise<void>;
   saveHistory: () => void;
   restoreHistory: (str: string) => void;
 }
@@ -45,79 +46,97 @@ const makeEmptyBoardState = (): boardState => {
   };
 };
 
+const getCounterColor = (counter: number): "black" | "white" => {
+  return counter % 2 === 0 ? "white" : "black";
+};
+
 const useBoard = (): useBoardReturns => {
-  const [{ counter, history, isEnd, stones, winner, winReason }, setBoard] =
-    useState<boardState>(makeEmptyBoardState());
+  const [board, setBoard] = useState<boardState>(makeEmptyBoardState());
 
   const saveHistory = () => {
-    console.log(JSON.stringify(history));
+    console.log(JSON.stringify(board.history));
   };
 
   const restoreHistory = (historyStr: string) => {
     putStones(JSON.parse(historyStr));
   };
 
-  const putStone = (p: place) => {
-    /** 1. Check a place is puttable */
-    if (isEnd || !isPuttable(p)) return;
-
-    /** 2. Put a stone */
-    const curColor: stoneColor = counter % 2 === 0 ? "black" : "white";
-
-    setBoard((prev) => ({
-      ...prev,
-      counter: prev.counter + 1,
-      history: [...prev.history, p],
-      stones: updatedStones(prev.stones, p, {
-        color: curColor,
-        counter: counter + 1,
-      }),
-    }));
-
-    /** 3. Set forbidden */
-    if (curColor === "white") {
-      setForbidden();
-    } else {
-      deleteForbidden();
-    }
-
-    /** 4. Check a row is made */
-    const isRowMade = isRow(p, curColor);
-    if (isRowMade) {
-      setBoard((prev) => ({
-        ...prev,
-        isEnd: true,
-        winner: curColor,
-        winReason: "5 in a row",
-      }));
-
-      deleteForbidden();
-    }
-
+  const putStone = async (p: place) => {
+    setBoard((prev) => putStoneBoardState(prev, p));
     return;
   };
 
-  const putStones = (places: place[]) => {
-    places.forEach((p) => putStone(p));
+  const putStones = async (places: place[]) => {
+    for (let i = 0; i < places.length; i++) {
+      await putStone(places[i]);
+    }
   };
 
-  const updatedStones = (
-    stones: stone[][],
-    p: place,
-    newStone: stone
-  ): stone[][] => {
-    return stones.map((row, i) =>
-      row.map((stone, j) => (i === p.y && j === p.x ? newStone : stone))
+  const putStoneBoardState = (prevState: boardState, p: place): boardState => {
+    if (prevState.isEnd) return prevState;
+
+    let curIsEnd: boolean = prevState.isEnd;
+    let curWinner = prevState.winner;
+    let curWinReason = prevState.winReason;
+    let isForbiddenDeleted: boolean = false;
+
+    const curCounter = prevState.counter + 1;
+    const curPlaceColor = getStoneColor(p, prevState.stones);
+    const curCounterColor = getCounterColor(curCounter);
+
+    if (curPlaceColor === "forbidden") {
+      isForbiddenDeleted = true;
+      curIsEnd = true;
+      curWinner = "white";
+      curWinReason = "Black took a forbidden";
+    } else if (curPlaceColor === "blank") {
+      if (curCounterColor === "black") {
+        isForbiddenDeleted = true;
+      }
+
+      if (isRow(p, curCounterColor, prevState.stones)) {
+        isForbiddenDeleted = true;
+        curIsEnd = true;
+        curWinner = curCounterColor;
+        curWinReason = "5 in a row";
+      }
+    } else {
+      return prevState;
+    }
+
+    const curStones = prevState.stones.map((row, y) =>
+      row.map((curStone, x) => {
+        if (x === p.x && y === p.y)
+          return { counter: curCounter, color: curCounterColor };
+        else if (isForbiddenDeleted && curStone.color === "forbidden")
+          return EMPTY_STONE;
+        else if (
+          !isForbiddenDeleted &&
+          curStone.color === "blank" &&
+          isForbidden({ x, y }, prevState.stones)
+        )
+          return FORBIDDEN_STONE;
+        else return curStone;
+      })
     );
+
+    return {
+      counter: curCounter,
+      stones: curStones,
+      history: [...prevState.history, p],
+      isEnd: curIsEnd,
+      winReason: curWinReason,
+      winner: curWinner,
+    };
   };
 
-  const getStoneColor = (p: place): stoneColor => {
+  const getStoneColor = (p: place, stones: stone[][]): stoneColor => {
     if (p.x > 14 || p.y > 14 || p.x < 0 || p.y < 0) return "edge";
 
     return stones[p.y][p.x].color;
   };
 
-  const isForbidden = (startPlace: place): boolean => {
+  const isForbidden = (startPlace: place, stones: stone[][]): boolean => {
     let Nrow3 = -1;
     let Nrow4 = -1;
     let Nrow6 = 0;
@@ -128,16 +147,22 @@ const useBoard = (): useBoardReturns => {
       let rowBlankCnt = 1;
       let isBlocked = false;
 
-      let [leftCnt, leftBlankCnt, leftBlockStack] = countBlankRow({
-        startPlace,
-        startColor: "black",
-        direction,
-      });
-      let [rightCnt, rightBlankCnt, rightBlockStack] = countBlankRow({
-        startPlace,
-        startColor: "black",
-        direction: negativePlace(direction),
-      });
+      let [leftCnt, leftBlankCnt, leftBlockStack] = countBlankRow(
+        {
+          startPlace,
+          startColor: "black",
+          direction,
+        },
+        stones
+      );
+      let [rightCnt, rightBlankCnt, rightBlockStack] = countBlankRow(
+        {
+          startPlace,
+          startColor: "black",
+          direction: negativePlace(direction),
+        },
+        stones
+      );
 
       rowCnt += leftCnt + rightCnt;
       rowBlankCnt += leftBlankCnt + rightBlankCnt;
@@ -170,17 +195,24 @@ const useBoard = (): useBoardReturns => {
     return false;
   };
 
-  const isRow = (startPlace: place, startColor: stoneColor): boolean => {
+  const isRow = (
+    startPlace: place,
+    startColor: stoneColor,
+    stones: stone[][]
+  ): boolean => {
     for (let d = 0; d < DIRECTIONS.length; d++) {
       let direction = DIRECTIONS[d];
       let rowCnt = 1;
 
-      rowCnt += countRow({ startPlace, startColor, direction });
-      rowCnt += countRow({
-        startPlace,
-        startColor,
-        direction: negativePlace(direction),
-      });
+      rowCnt += countRow({ startPlace, startColor, direction }, stones);
+      rowCnt += countRow(
+        {
+          startPlace,
+          startColor,
+          direction: negativePlace(direction),
+        },
+        stones
+      );
 
       if (rowCnt >= 5) {
         return true;
@@ -190,56 +222,32 @@ const useBoard = (): useBoardReturns => {
     return false;
   };
 
-  const isPuttable = (p: place): boolean => {
-    const curPlaceColor = getStoneColor(p);
-
-    if (curPlaceColor === "forbidden") {
-      deleteForbidden();
-      setBoard((prev) => ({
-        ...prev,
-        isEnd: true,
-        winner: "white",
-        winReason: "Black took a forbidden",
-      }));
-
-      return false;
-    }
-
-    if (curPlaceColor !== "blank") {
-      return false;
-    }
-
-    return true;
-  };
-
-  const countRow = ({
-    startPlace,
-    startColor,
-    direction,
-  }: countRowProps): number => {
+  const countRow = (
+    { startPlace, startColor, direction }: countRowProps,
+    stones: stone[][]
+  ): number => {
     let cnt = 0;
 
     let curPlace = movePlace(startPlace, direction);
 
     let prevColor = startColor;
-    let curColor = getStoneColor(curPlace);
+    let curColor = getStoneColor(curPlace, stones);
 
     while (curColor === prevColor) {
       cnt += 1;
       curPlace = movePlace(curPlace, direction);
 
       prevColor = curColor;
-      curColor = getStoneColor(curPlace);
+      curColor = getStoneColor(curPlace, stones);
     }
 
     return cnt;
   };
 
-  const countBlankRow = ({
-    startPlace,
-    startColor,
-    direction,
-  }: countRowProps): number[] => {
+  const countBlankRow = (
+    { startPlace, startColor, direction }: countRowProps,
+    stones: stone[][]
+  ): number[] => {
     let cnt = 0;
     let blankCnt = 0;
     let blockStack = 0;
@@ -248,7 +256,7 @@ const useBoard = (): useBoardReturns => {
     let curPlace = movePlace(startPlace, direction);
 
     let prevColor = startColor;
-    let curColor = getStoneColor(curPlace);
+    let curColor = getStoneColor(curPlace, stones);
 
     while (true) {
       if (curColor === "white" || curColor === "edge") {
@@ -269,38 +277,10 @@ const useBoard = (): useBoardReturns => {
       curPlace = movePlace(curPlace, direction);
 
       prevColor = curColor;
-      curColor = getStoneColor(curPlace);
+      curColor = getStoneColor(curPlace, stones);
     }
 
     return [cnt, blankCnt, blockStack];
-  };
-
-  const setForbidden = () => {
-    stones.forEach((row, y) => {
-      row.forEach((stone, x) => {
-        const curPlace = { x, y };
-        if (stone.color === "blank" && isForbidden(curPlace)) {
-          setBoard((prev) => ({
-            ...prev,
-            stones: updatedStones(prev.stones, curPlace, FORBIDDEN_STONE),
-          }));
-        }
-      });
-    });
-  };
-
-  const deleteForbidden = () => {
-    stones.forEach((row, y) => {
-      row.forEach((stone, x) => {
-        const curPlace = { x, y };
-        if (stone.color === "forbidden") {
-          setBoard((prev) => ({
-            ...prev,
-            stones: updatedStones(prev.stones, curPlace, EMPTY_STONE),
-          }));
-        }
-      });
-    });
   };
 
   const clearBoard = () => {
@@ -308,12 +288,7 @@ const useBoard = (): useBoardReturns => {
   };
 
   return {
-    stones,
-    counter,
-    history,
-    isEnd,
-    winner,
-    winReason,
+    board,
     clearBoard,
     putStone,
     putStones,

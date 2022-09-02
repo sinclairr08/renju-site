@@ -6,11 +6,12 @@ const arr = [...Array(15).keys()];
 
 const Board = () => {
   const [positionMessage, setPositionMessage] = useState("");
-  const { stones, winner, winReason, clearBoard, putStone, saveHistory } =
+  const { board, clearBoard, putStone, saveHistory, restoreHistory } =
     useBoard();
+  const { stones, winner, winReason } = board;
   const boardRef = useRef<any>(null);
 
-  const clickBoard = (e: React.MouseEvent<HTMLDivElement>) => {
+  const clickBoard = async (e: React.MouseEvent<HTMLDivElement>) => {
     const refX = boardRef.current.offsetLeft;
     const refY = boardRef.current.offsetTop;
 
@@ -28,7 +29,7 @@ const Board = () => {
     const curX = Math.floor(offsetX / 40);
     const curY = Math.floor(offsetY / 40);
 
-    putStone({ x: curX, y: curY });
+    await putStone({ x: curX, y: curY });
     setPositionMessage(`x : ${curX}, y : ${curY}`);
   };
 
