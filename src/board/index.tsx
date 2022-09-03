@@ -1,15 +1,26 @@
 import React, { useRef, useState } from "react";
+import { useForm } from "react-hook-form";
 import { preLine, hrLine, vrLine, stoneComponent } from "./components";
 import useBoard from "./useBoard";
 
 const arr = [...Array(15).keys()];
+
+interface historyForm {
+  historyStr: string;
+}
 
 const Board = () => {
   const [positionMessage, setPositionMessage] = useState("");
   const { board, clearBoard, putStone, saveHistory, restoreHistory } =
     useBoard();
   const { stones, winner, winReason } = board;
+  const { register, handleSubmit, reset } = useForm<historyForm>();
   const boardRef = useRef<any>(null);
+
+  const onValid = ({ historyStr }: historyForm) => {
+    restoreHistory(historyStr);
+    reset();
+  };
 
   const clickBoard = async (e: React.MouseEvent<HTMLDivElement>) => {
     const refX = boardRef.current.offsetLeft;
@@ -74,6 +85,19 @@ const Board = () => {
         >
           Save (console)
         </button>
+        <form
+          className="flex flex-col items-center justify-center mt-4"
+          onSubmit={handleSubmit(onValid)}
+        >
+          <input
+            type="text"
+            {...register("historyStr")}
+            className="outline-none w-full border-2 border-neutral-700 rounded-lg py-1 px-1"
+          />
+          <button className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full">
+            Restore
+          </button>
+        </form>
       </div>
     </div>
   );
