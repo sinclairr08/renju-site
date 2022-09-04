@@ -103,18 +103,19 @@ const useBoard = (): useBoardReturns => {
 
     const curCounter = prevState.counter + 1;
     const curCounterColor = getCounterColor(curCounter);
+    const curStones = prevState.stones.map((row, y) =>
+      row.map((curStone, x) =>
+        x === p.x && y === p.y
+          ? { counter: curCounter, color: curCounterColor }
+          : curStone
+      )
+    );
 
     if (prevState.isEnd) {
       const curBoardState = {
         ...prevState,
         counter: curCounter,
-        stones: prevState.stones.map((row, y) =>
-          row.map((curStone, x) =>
-            x === p.x && y === p.y
-              ? { counter: curCounter, color: curCounterColor }
-              : curStone
-          )
-        ),
+        stones: curStones,
         history: [...prevState.history, p],
       };
       setUndoStack((prev) => [curBoardState, ...prev]);
@@ -144,16 +145,14 @@ const useBoard = (): useBoardReturns => {
       }
     }
 
-    const curStones = prevState.stones.map((row, y) =>
+    const curStonesWForbidden = curStones.map((row, y) =>
       row.map((curStone, x) => {
-        if (x === p.x && y === p.y)
-          return { counter: curCounter, color: curCounterColor };
-        else if (isForbiddenDeleted && curStone.color === "forbidden")
+        if (isForbiddenDeleted && curStone.color === "forbidden")
           return EMPTY_STONE;
         else if (
           !isForbiddenDeleted &&
           curStone.color === "blank" &&
-          isForbidden({ x, y }, prevState.stones)
+          isForbidden({ x, y }, curStones)
         )
           return FORBIDDEN_STONE;
         else return curStone;
@@ -163,7 +162,7 @@ const useBoard = (): useBoardReturns => {
     const curBoardState = {
       ...prevState,
       counter: curCounter,
-      stones: curStones,
+      stones: curStonesWForbidden,
       history: [...prevState.history, p],
       isEnd: curIsEnd,
       winReason: curWinReason,
@@ -220,7 +219,7 @@ const useBoard = (): useBoardReturns => {
         if (rowCnt !== 1 || leftBlankCnt * rightBlankCnt === 0) {
           Nrow3 += 1;
         }
-      } else if (rowBlankCnt === 4) {
+      } else if (rowBlankCnt === 4 && leftBlockStack + rightBlockStack <= 2) {
         Nrow4 += 1;
       } else if (rowBlankCnt >= 6) {
         if (rowBlankCnt === rowCnt) {
