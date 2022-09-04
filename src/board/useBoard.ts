@@ -24,6 +24,8 @@ export interface useBoardReturns {
   putStones: (p: place[]) => Promise<void>;
   saveHistory: () => void;
   restoreHistory: (str: string) => Promise<void>;
+  undo: () => void;
+  redo: () => void;
 }
 
 interface countRowProps {
@@ -52,6 +54,10 @@ const getCounterColor = (counter: number): "black" | "white" => {
 
 const useBoard = (): useBoardReturns => {
   const [board, setBoard] = useState<boardState>(makeEmptyBoardState());
+  const [undoStack, setUndoStack] = useState<boardState[]>([
+    makeEmptyBoardState(),
+  ]);
+  const [redoStack, setRedoStack] = useState<boardState[]>([]);
 
   const saveHistory = () => {
     console.log(JSON.stringify(board.history));
@@ -59,6 +65,22 @@ const useBoard = (): useBoardReturns => {
 
   const restoreHistory = async (historyStr: string) => {
     await putStones(JSON.parse(historyStr));
+  };
+
+  const undo = () => {
+    if (undoStack.length > 1) {
+      setBoard(undoStack[1]);
+      setRedoStack((prev) => [undoStack[0], ...prev]);
+      setUndoStack((prev) => prev.slice(1));
+    }
+  };
+
+  const redo = () => {
+    if (redoStack.length > 0) {
+      setBoard(redoStack[0]);
+      setUndoStack((prev) => [redoStack[0], ...prev]);
+      setRedoStack((prev) => prev.slice(1));
+    }
   };
 
   const putStone = async (p: place) => {
@@ -73,23 +95,43 @@ const useBoard = (): useBoardReturns => {
   };
 
   const putStoneBoardState = (prevState: boardState, p: place): boardState => {
-    if (prevState.isEnd) return prevState;
+    const curPlaceColor = getStoneColor(p, prevState.stones);
+
+    if (curPlaceColor !== "forbidden" && curPlaceColor !== "blank") {
+      return prevState;
+    }
+
+    const curCounter = prevState.counter + 1;
+    const curCounterColor = getCounterColor(curCounter);
+
+    if (prevState.isEnd) {
+      const curBoardState = {
+        ...prevState,
+        counter: curCounter,
+        stones: prevState.stones.map((row, y) =>
+          row.map((curStone, x) =>
+            x === p.x && y === p.y
+              ? { counter: curCounter, color: curCounterColor }
+              : curStone
+          )
+        ),
+        history: [...prevState.history, p],
+      };
+      setUndoStack((prev) => [curBoardState, ...prev]);
+      return curBoardState;
+    }
 
     let curIsEnd: boolean = prevState.isEnd;
     let curWinner = prevState.winner;
     let curWinReason = prevState.winReason;
     let isForbiddenDeleted: boolean = false;
 
-    const curCounter = prevState.counter + 1;
-    const curPlaceColor = getStoneColor(p, prevState.stones);
-    const curCounterColor = getCounterColor(curCounter);
-
     if (curPlaceColor === "forbidden") {
       isForbiddenDeleted = true;
       curIsEnd = true;
       curWinner = "white";
       curWinReason = "Black took a forbidden";
-    } else if (curPlaceColor === "blank") {
+    } else {
       if (curCounterColor === "black") {
         isForbiddenDeleted = true;
       }
@@ -100,8 +142,6 @@ const useBoard = (): useBoardReturns => {
         curWinner = curCounterColor;
         curWinReason = "5 in a row";
       }
-    } else {
-      return prevState;
     }
 
     const curStones = prevState.stones.map((row, y) =>
@@ -120,7 +160,8 @@ const useBoard = (): useBoardReturns => {
       })
     );
 
-    return {
+    const curBoardState = {
+      ...prevState,
       counter: curCounter,
       stones: curStones,
       history: [...prevState.history, p],
@@ -128,6 +169,8 @@ const useBoard = (): useBoardReturns => {
       winReason: curWinReason,
       winner: curWinner,
     };
+    setUndoStack((prev) => [curBoardState, ...prev]);
+    return curBoardState;
   };
 
   const getStoneColor = (p: place, stones: stone[][]): stoneColor => {
@@ -285,6 +328,8 @@ const useBoard = (): useBoardReturns => {
 
   const clearBoard = () => {
     setBoard(makeEmptyBoardState());
+    setUndoStack([makeEmptyBoardState()]);
+    setRedoStack([]);
   };
 
   return {
@@ -294,6 +339,8 @@ const useBoard = (): useBoardReturns => {
     putStones,
     saveHistory,
     restoreHistory,
+    undo,
+    redo,
   };
 };
 

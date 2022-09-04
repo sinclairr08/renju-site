@@ -18,8 +18,15 @@ const Board = () => {
   const [testResult, setTestResult] = useState(
     new Array(testData.length).fill("-")
   );
-  const { board, clearBoard, putStone, saveHistory, restoreHistory } =
-    useBoard();
+  const {
+    board,
+    clearBoard,
+    putStone,
+    saveHistory,
+    restoreHistory,
+    undo,
+    redo,
+  } = useBoard();
   const { stones, winner, winReason } = board;
   const { register, handleSubmit, reset } = useForm<historyForm>();
   const boardRef = useRef<any>(null);
@@ -85,21 +92,52 @@ const Board = () => {
         {arr.map((l) => hrLine(l))}
         {arr.map((l) => vrLine(l))}
       </div>
-
-      <span className="mt-4">
+      <div className="flex space-x-8 mt-4">
+        <svg
+          onClick={undo}
+          className="w-6 h-6 cursor-pointer"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+          ></path>
+        </svg>
+        <svg
+          onClick={redo}
+          className="w-6 h-6 cursor-pointer"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M14 5l7 7m0 0l-7 7m7-7H3"
+          ></path>
+        </svg>
+      </div>
+      <span className="mt-4 select-none">
         {winner
           ? `${winner} win! ${winReason}`
           : `Position: ${positionMessage}`}
       </span>
       <div className="flex flex-col w-1/2">
         <button
-          className="bg-neutral-800 text-white rounded-md p-2 mt-4"
+          className="bg-neutral-800 text-white rounded-md p-2 mt-4 select-none"
           onClick={clearBoard}
         >
           Clear
         </button>
         <button
-          className="bg-neutral-800 text-white rounded-md p-2 mt-4"
+          className="bg-neutral-800 text-white rounded-md p-2 mt-4 select-none"
           onClick={saveHistory}
         >
           Save (console)
@@ -113,13 +151,13 @@ const Board = () => {
             {...register("historyStr")}
             className="outline-none w-full border-2 border-neutral-700 rounded-lg py-1 px-1"
           />
-          <button className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full">
+          <button className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full select-none">
             Restore
           </button>
         </form>
         <button
           onClick={() => setTestOpen((prev) => !prev)}
-          className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full text-center"
+          className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full text-center select-none"
         >
           Test
         </button>
