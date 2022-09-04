@@ -1,7 +1,9 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { preLine, hrLine, vrLine, stoneComponent } from "./components";
 import useBoard from "./useBoard";
+import testData from "./testData.json";
+import { join_cls } from "../utils";
 
 const arr = [...Array(15).keys()];
 
@@ -11,14 +13,25 @@ interface historyForm {
 
 const Board = () => {
   const [positionMessage, setPositionMessage] = useState("");
+  const [testId, setTestId] = useState(-1);
+  const [testOpen, setTestOpen] = useState(false);
+  const [testResult, setTestResult] = useState(
+    new Array(testData.length).fill("-")
+  );
   const { board, clearBoard, putStone, saveHistory, restoreHistory } =
     useBoard();
   const { stones, winner, winReason } = board;
   const { register, handleSubmit, reset } = useForm<historyForm>();
   const boardRef = useRef<any>(null);
 
-  const onValid = ({ historyStr }: historyForm) => {
-    restoreHistory(historyStr);
+  useEffect(() => {
+    setTestResult((prev) =>
+      prev.map((res, i) => (i === testId ? board.winner : res))
+    );
+  }, [testId]);
+
+  const onValid = async ({ historyStr }: historyForm) => {
+    await restoreHistory(historyStr);
     reset();
   };
 
@@ -42,6 +55,12 @@ const Board = () => {
 
     await putStone({ x: curX, y: curY });
     setPositionMessage(`x : ${curX}, y : ${curY}`);
+  };
+
+  const testStart = async ({ data, id }: any) => {
+    clearBoard();
+    await restoreHistory(JSON.stringify(data));
+    setTestId(id);
   };
 
   return (
@@ -98,6 +117,48 @@ const Board = () => {
             Restore
           </button>
         </form>
+        <button
+          onClick={() => setTestOpen((prev) => !prev)}
+          className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full text-center"
+        >
+          Test
+        </button>
+        {testOpen && (
+          <div className="flex flex-col">
+            <div className="mt-2 grid grid-cols-3 gap-x-2 text-center text-xs">
+              <span>Test Start</span>
+              <span>Result</span>
+              <span>Expected</span>
+            </div>
+            {testData.map((td) => (
+              <div
+                key={td.id}
+                className={join_cls(
+                  "mt-2 grid grid-cols-3 gap-x-2 text-center"
+                )}
+              >
+                <button
+                  className="border-2 border-neutral-700 rounded-md"
+                  onClick={() => testStart(td)}
+                >
+                  {td.id}
+                </button>
+                <span
+                  className={
+                    testResult[td.id] === "-"
+                      ? ""
+                      : testResult[td.id] === td.winner
+                      ? "bg-green-400"
+                      : "bg-red-400"
+                  }
+                >
+                  {testResult[td.id]}
+                </span>
+                <span>{td.winner}</span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

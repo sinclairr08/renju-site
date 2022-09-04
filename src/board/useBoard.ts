@@ -23,7 +23,7 @@ export interface useBoardReturns {
   putStone: (p: place) => Promise<void>;
   putStones: (p: place[]) => Promise<void>;
   saveHistory: () => void;
-  restoreHistory: (str: string) => void;
+  restoreHistory: (str: string) => Promise<void>;
 }
 
 interface countRowProps {
@@ -57,8 +57,8 @@ const useBoard = (): useBoardReturns => {
     console.log(JSON.stringify(board.history));
   };
 
-  const restoreHistory = (historyStr: string) => {
-    putStones(JSON.parse(historyStr));
+  const restoreHistory = async (historyStr: string) => {
+    await putStones(JSON.parse(historyStr));
   };
 
   const putStone = async (p: place) => {
