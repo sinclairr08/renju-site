@@ -1,13 +1,13 @@
 {
   "files": {
-    "main.css": "/renju-site/static/css/main.3306b19c.css",
-    "main.js": "/renju-site/static/js/main.49647167.js",
+    "main.css": "/renju-site/static/css/main.4d03a4ca.css",
+    "main.js": "/renju-site/static/js/main.14ff2d24.js",
     "index.html": "/renju-site/index.html",
-    "main.3306b19c.css.map": "/renju-site/static/css/main.3306b19c.css.map",
-    "main.49647167.js.map": "/renju-site/static/js/main.49647167.js.map"
+    "main.4d03a4ca.css.map": "/renju-site/static/css/main.4d03a4ca.css.map",
+    "main.14ff2d24.js.map": "/renju-site/static/js/main.14ff2d24.js.map"
   },
   "entrypoints": [
-    "static/css/main.3306b19c.css",
-    "static/js/main.49647167.js"
+    "static/css/main.4d03a4ca.css",
+    "static/js/main.14ff2d24.js"
   ]
 }
