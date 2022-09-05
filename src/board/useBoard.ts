@@ -22,8 +22,6 @@ export interface useBoardReturns {
   clearBoard: () => void;
   putStone: (p: place) => Promise<void>;
   putStones: (p: place[]) => Promise<void>;
-  saveHistory: () => void;
-  restoreHistory: (str: string) => Promise<void>;
   undo: () => void;
   redo: () => void;
   undoAll: () => void;
@@ -60,14 +58,6 @@ const useBoard = (): useBoardReturns => {
     makeEmptyBoardState(),
   ]);
   const [redoStack, setRedoStack] = useState<boardState[]>([]);
-
-  const saveHistory = () => {
-    console.log(JSON.stringify(board.history));
-  };
-
-  const restoreHistory = async (historyStr: string) => {
-    await putStones(JSON.parse(historyStr));
-  };
 
   const undoAll = () => {
     if (undoStack.length > 1) {
@@ -357,8 +347,6 @@ const useBoard = (): useBoardReturns => {
     clearBoard,
     putStone,
     putStones,
-    saveHistory,
-    restoreHistory,
     undo,
     redo,
     undoAll,

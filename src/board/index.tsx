@@ -1,15 +1,11 @@
 import React, { useEffect, useRef, useState } from "react";
-import { useForm } from "react-hook-form";
 import { preLine, hrLine, vrLine, stoneComponent } from "./components";
 import useBoard from "./useBoard";
 import testData from "./testData.json";
 import { join_cls } from "../utils";
+import { place } from "./place";
 
 const arr = [...Array(15).keys()];
-
-interface historyForm {
-  historyStr: string;
-}
 
 const Board = () => {
   const [positionMessage, setPositionMessage] = useState("");
@@ -18,19 +14,18 @@ const Board = () => {
   const [testResult, setTestResult] = useState(
     new Array(testData.length).fill("-")
   );
+  const [saved, setSaved] = useState<place[]>([]);
   const {
     board,
     clearBoard,
     putStone,
-    saveHistory,
-    restoreHistory,
+    putStones,
     undo,
     redo,
     undoAll,
     redoAll,
   } = useBoard();
   const { stones, winner, winReason } = board;
-  const { register, handleSubmit, reset } = useForm<historyForm>();
   const boardRef = useRef<any>(null);
 
   useEffect(() => {
@@ -39,12 +34,28 @@ const Board = () => {
     );
   }, [testId]);
 
-  const onValid = async ({ historyStr }: historyForm) => {
-    await restoreHistory(historyStr);
-    reset();
+  useEffect(() => {
+    if (board.history.length > 0) {
+      const p = board.history[board.history.length - 1];
+      setPositionMessage(`x : ${p.x}, y : ${p.y}`);
+    } else {
+      setPositionMessage("");
+    }
+  }, [board.history]);
+
+  const onSaveClick = () => {
+    console.log(JSON.stringify(board.history));
+    setSaved(board.history);
   };
 
-  const clickBoard = async (e: React.MouseEvent<HTMLDivElement>) => {
+  const onRestoreClick = () => {
+    if (saved.length > 0) {
+      clearBoard();
+      putStones(saved);
+    }
+  };
+
+  const onBoardClick = async (e: React.MouseEvent<HTMLDivElement>) => {
     const refX = boardRef.current.offsetLeft;
     const refY = boardRef.current.offsetTop;
 
@@ -63,12 +74,11 @@ const Board = () => {
     const curY = Math.floor(offsetY / 40);
 
     await putStone({ x: curX, y: curY });
-    setPositionMessage(`x : ${curX}, y : ${curY}`);
   };
 
   const testStart = async ({ data, id }: any) => {
     clearBoard();
-    await restoreHistory(JSON.stringify(data));
+    await putStones(data);
     setTestId(id);
   };
 
@@ -76,7 +86,7 @@ const Board = () => {
     <div className="p-4 flex flex-col items-center justify-center min-w-[622px] mt-12">
       <div
         ref={boardRef}
-        onClick={clickBoard}
+        onClick={onBoardClick}
         className="bg-amber-600 w-[590px] h-[590px] relative"
       >
         <div
@@ -171,23 +181,16 @@ const Board = () => {
         </button>
         <button
           className="bg-neutral-800 text-white rounded-md p-2 mt-4 select-none"
-          onClick={saveHistory}
+          onClick={onSaveClick}
         >
-          Save (console)
+          Save
         </button>
-        <form
-          className="flex flex-col items-center justify-center mt-4"
-          onSubmit={handleSubmit(onValid)}
+        <button
+          className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full select-none"
+          onClick={onRestoreClick}
         >
-          <input
-            type="text"
-            {...register("historyStr")}
-            className="outline-none w-full border-2 border-neutral-700 rounded-lg py-1 px-1"
-          />
-          <button className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full select-none">
-            Restore
-          </button>
-        </form>
+          Restore
+        </button>
         <button
           onClick={() => setTestOpen((prev) => !prev)}
           className="bg-neutral-800 text-white rounded-md p-2 mt-4 w-full text-center select-none"
