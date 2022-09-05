@@ -26,6 +26,8 @@ export interface useBoardReturns {
   restoreHistory: (str: string) => Promise<void>;
   undo: () => void;
   redo: () => void;
+  undoAll: () => void;
+  redoAll: () => void;
 }
 
 interface countRowProps {
@@ -65,6 +67,23 @@ const useBoard = (): useBoardReturns => {
 
   const restoreHistory = async (historyStr: string) => {
     await putStones(JSON.parse(historyStr));
+  };
+
+  const undoAll = () => {
+    if (undoStack.length > 1) {
+      undoStack
+        .slice(0, -1)
+        .forEach((state) => setRedoStack((prev) => [state, ...prev]));
+      setUndoStack([makeEmptyBoardState()]);
+      setBoard(makeEmptyBoardState());
+    }
+  };
+  const redoAll = () => {
+    if (redoStack.length > 0) {
+      setBoard(redoStack[redoStack.length - 1]);
+      redoStack.forEach((state) => setUndoStack((prev) => [state, ...prev]));
+      setRedoStack([]);
+    }
   };
 
   const undo = () => {
@@ -118,6 +137,7 @@ const useBoard = (): useBoardReturns => {
         stones: curStones,
         history: [...prevState.history, p],
       };
+      setRedoStack([]);
       setUndoStack((prev) => [curBoardState, ...prev]);
       return curBoardState;
     }
@@ -168,6 +188,7 @@ const useBoard = (): useBoardReturns => {
       winReason: curWinReason,
       winner: curWinner,
     };
+    setRedoStack([]);
     setUndoStack((prev) => [curBoardState, ...prev]);
     return curBoardState;
   };
@@ -340,6 +361,8 @@ const useBoard = (): useBoardReturns => {
     restoreHistory,
     undo,
     redo,
+    undoAll,
+    redoAll,
   };
 };
 

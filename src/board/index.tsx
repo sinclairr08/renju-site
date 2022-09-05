@@ -26,6 +26,8 @@ const Board = () => {
     restoreHistory,
     undo,
     redo,
+    undoAll,
+    redoAll,
   } = useBoard();
   const { stones, winner, winReason } = board;
   const { register, handleSubmit, reset } = useForm<historyForm>();
@@ -94,6 +96,21 @@ const Board = () => {
       </div>
       <div className="flex space-x-8 mt-4">
         <svg
+          onClick={undoAll}
+          className="w-6 h-6 cursor-pointer"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M11 19l-7-7 7-7m8 14l-7-7 7-7"
+          ></path>
+        </svg>
+        <svg
           onClick={undo}
           className="w-6 h-6 cursor-pointer"
           fill="none"
@@ -105,9 +122,10 @@ const Board = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2"
-            d="M10 19l-7-7m0 0l7-7m-7 7h18"
+            d="M15 19l-7-7 7-7"
           ></path>
         </svg>
+
         <svg
           onClick={redo}
           className="w-6 h-6 cursor-pointer"
@@ -120,7 +138,22 @@ const Board = () => {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="2"
-            d="M14 5l7 7m0 0l-7 7m7-7H3"
+            d="M9 5l7 7-7 7"
+          ></path>
+        </svg>
+        <svg
+          onClick={redoAll}
+          className="w-6 h-6 cursor-pointer"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth="2"
+            d="M13 5l7 7-7 7M5 5l7 7-7 7"
           ></path>
         </svg>
       </div>

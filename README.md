@@ -9,5 +9,5 @@ This is the web version of [renju-player](https://github.com/Sinclairr08/renju-p
 1. ~~Move python code to react (2022-08-21)~~
 2. ~~Code modularization~~
 3. ~~Test code and interface~~
-4. Undo, Redo functions
+4. ~~Undo, Redo functions~~
 5. Competing with a computer using back-end server
